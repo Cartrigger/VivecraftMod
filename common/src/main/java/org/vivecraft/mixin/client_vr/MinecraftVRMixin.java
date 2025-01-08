@@ -71,7 +71,7 @@ import org.vivecraft.client_vr.gameplay.trackers.TelescopeTracker;
 import org.vivecraft.client_vr.menuworlds.MenuWorldDownloader;
 import org.vivecraft.client_vr.menuworlds.MenuWorldExporter;
 import org.vivecraft.client_vr.provider.MCVR;
-import org.vivecraft.client_vr.provider.openvr_lwjgl.VRInputAction;
+import org.vivecraft.client_vr.provider.control.VRInputAction;
 import org.vivecraft.client_vr.render.MirrorNotification;
 import org.vivecraft.client_vr.render.RenderConfigException;
 import org.vivecraft.client_vr.render.VRFirstPersonArmSwing;
@@ -340,7 +340,7 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
             try {
                 this.profiler.push("setupRenderConfiguration");
                 RenderHelper.checkGLError("pre render setup");
-                ClientDataHolderVR.getInstance().vrRenderer.setupRenderConfiguration();
+                ClientDataHolderVR.getInstance().vrRenderer.setupRenderConfiguration(true);
                 RenderHelper.checkGLError("post render setup");
             } catch (Exception e) {
                 // something went wrong, disable VR
@@ -381,17 +381,6 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
     @ModifyExpressionValue(method = "runTick", at = @At(value = "FIELD", target = "Lnet/minecraft/client/Minecraft;fpsPieResults:Lnet/minecraft/util/profiling/ProfileResults;", ordinal = 0))
     private ProfileResults vivecraft$cancelRegularFpsPie(ProfileResults original) {
         return VRState.VR_RUNNING ? null : original;
-    }
-
-    @WrapOperation(method = "runTick", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;blitToScreen(II)V"))
-    private void vivecraft$blitMirror(RenderTarget instance, int width, int height, Operation<Void> original) {
-        if (!VRState.VR_RUNNING) {
-            original.call(instance, width, height);
-        } else {
-            this.profiler.popPush("vrMirror");
-            ShaderHelper.drawMirror();
-            RenderHelper.checkGLError("post-mirror");
-        }
     }
 
     @Inject(method = "setCameraEntity", at = @At("HEAD"))
