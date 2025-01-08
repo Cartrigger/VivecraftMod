@@ -37,9 +37,6 @@ public class VRShaders {
     public static AbstractUniform POST_PROCESSING_OVERLAY_BLACK_ALPHA_UNIFORM;
     public static AbstractUniform POST_PROCESSING_OVERLAY_EYE_UNIFORM;
 
-    // blit shader
-    public static ShaderInstance BLIT_VR_SHADER;
-
     // end portal shaders
     public static ShaderInstance RENDERTYPE_END_PORTAL_VR_SHADER;
     public static ShaderInstance RENDERTYPE_END_GATEWAY_VR_SHADER;
