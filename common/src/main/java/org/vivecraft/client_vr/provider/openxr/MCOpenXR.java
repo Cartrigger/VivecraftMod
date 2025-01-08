@@ -2,7 +2,6 @@ package org.vivecraft.client_vr.provider.openxr;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.profiling.Profiler;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -149,12 +148,12 @@ public class MCOpenXR extends MCVR {
     @Override
     public void poll(long var1) {
         if (this.initialized) {
-            Profiler.get().push("events");
+            this.mc.getProfiler().push("events");
             this.pollVREvents();
 
             if (!this.dh.vrSettings.seated) {
-                Profiler.get().popPush("controllers");
-                Profiler.get().push("gui");
+                this.mc.getProfiler().popPush("controllers");
+                this.mc.getProfiler().push("gui");
 
                 if (this.mc.screen == null && this.dh.vrSettings.vrTouchHotbar) {
 
@@ -163,15 +162,15 @@ public class MCOpenXR extends MCVR {
                     }
                 }
 
-                Profiler.get().pop();
+                this.mc.getProfiler().pop();
             }
-            Profiler.get().popPush("updatePose/Vsync");
+            this.mc.getProfiler().popPush("updatePose/Vsync");
             this.updatePose();
-            Profiler.get().popPush("processInputs");
+            this.mc.getProfiler().popPush("processInputs");
             this.processInputs();
-            Profiler.get().popPush("hmdSampling");
+            this.mc.getProfiler().popPush("hmdSampling");
             this.hmdSampling();
-            Profiler.get().pop();
+            this.mc.getProfiler().pop();
         }
     }
 
@@ -231,7 +230,7 @@ public class MCOpenXR extends MCVR {
             OpenXRUtil.openXRPoseToMarix(this.viewBuffer.get(1).pose(), this.hmdPoseRightEye);
 
             if (this.inputInitialized) {
-                Profiler.get().push("updateActionState");
+                this.mc.getProfiler().push("updateActionState");
 
                 if (this.updateActiveActionSets()) {
                     XrActionsSyncInfo syncInfo = XrActionsSyncInfo.calloc(stack)
@@ -251,7 +250,7 @@ public class MCOpenXR extends MCVR {
                 this.readPoseData(this.aim[RIGHT_CONTROLLER], actionSet);
                 this.readPoseData(this.aim[LEFT_CONTROLLER], actionSet);
 
-                Profiler.get().pop();
+                this.mc.getProfiler().pop();
 
                 // reverse
                 if (this.dh.vrSettings.reverseHands) {

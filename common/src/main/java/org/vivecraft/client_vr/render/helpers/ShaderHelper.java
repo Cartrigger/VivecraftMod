@@ -357,11 +357,11 @@ public class ShaderHelper {
         VRShaders.MIXED_REALITY_SHADER.setSampler("thirdPersonDepth",
             DATA_HOLDER.vrRenderer.framebufferMR.getDepthTextureId());
 
-        mixedRealityShader.apply();
+        VRShaders.MIXED_REALITY_SHADER.apply();
 
-        drawFullscreenQuad(VRShaders.MIXED_REALITY_SHADER.vertexFormat());
+        drawFullscreenQuad(VRShaders.MIXED_REALITY_SHADER.getVertexFormat());
 
-        mixedRealityShader.clear();
+        VRShaders.MIXED_REALITY_SHADER.clear();
 
         if (DATA_HOLDER.vrSettings.mixedRealityUnityLike) {
             RenderTarget source;

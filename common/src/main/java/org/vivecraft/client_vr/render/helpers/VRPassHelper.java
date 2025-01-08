@@ -256,14 +256,14 @@ public class VRPassHelper {
 
         DATA_HOLDER.vrPlayer.postRender(deltaTracker.getGameTimeDeltaPartialTick(true));
 
-        MC.getProfiler().get().push("vrMirror");
+        MC.getProfiler().push("vrMirror");
         // use the vanilla target for the mirror
         RenderPassManager.setMirrorRenderPass();
         MC.mainRenderTarget.bindWrite(true);
         ShaderHelper.drawMirror();
         RenderHelper.checkGLError("post-mirror");
 
-        MC.getProfiler().get().popPush("Display/Reproject");
+        MC.getProfiler().popPush("Display/Reproject");
 
         try {
             DATA_HOLDER.vrRenderer.endFrame();

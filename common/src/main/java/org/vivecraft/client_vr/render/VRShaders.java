@@ -89,11 +89,6 @@ public class VRShaders {
         POST_PROCESSING_OVERLAY_BLACK_ALPHA_UNIFORM = POST_PROCESSING_SHADER.safeGetUniform("blackalpha");
     }
 
-    public static void setupBlitAspect() throws Exception {
-        BLIT_VR_SHADER = new ShaderInstance(Minecraft.getInstance().getResourceManager(), "blit_vr",
-            DefaultVertexFormat.POSITION_TEX);
-    }
-
     public static void setupPortalShaders() throws IOException {
         RENDERTYPE_END_PORTAL_VR_SHADER = new ShaderInstance(Minecraft.getInstance().getResourceManager(),
             "rendertype_end_portal_vr", DefaultVertexFormat.POSITION);

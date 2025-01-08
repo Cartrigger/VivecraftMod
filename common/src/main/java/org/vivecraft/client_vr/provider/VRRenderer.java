@@ -65,6 +65,7 @@ public abstract class VRRenderer {
     public RenderTarget cameraRenderFramebuffer;
     public RenderTarget telescopeFramebufferL;
     public RenderTarget telescopeFramebufferR;
+    public RenderTarget mirrorFramebuffer;
 
     // Stencil mesh buffer for each eye
     protected float[][] hiddenMeshVertices = new float[2][];
@@ -563,6 +564,10 @@ public abstract class VRRenderer {
                 if (WorldRenderPass.MIXED_REALITY != null) {
                     WorldRenderPass.MIXED_REALITY.resize(mirrorSize.getA(), mirrorSize.getB());
                 }
+                this.mirrorFramebuffer.resize(
+                    ((WindowExtension) (Object) Minecraft.getInstance().getWindow()).vivecraft$getActualScreenWidth(),
+                    ((WindowExtension) (Object) Minecraft.getInstance().getWindow()).vivecraft$getActualScreenHeight(),
+                    Minecraft.ON_OSX);
             }
 
             // telescopes
@@ -699,6 +704,13 @@ public abstract class VRRenderer {
                 }
             }
 
+            this.mirrorFramebuffer = new VRTextureTarget("Mirror", Math.max(1,
+                ((WindowExtension) (Object) Minecraft.getInstance().getWindow()).vivecraft$getActualScreenWidth()),
+                Math.max(1,
+                    ((WindowExtension) (Object) Minecraft.getInstance().getWindow()).vivecraft$getActualScreenHeight()),
+                false, -1, false, false, false);
+
+
             GuiHandler.updateResolution();
             GuiHandler.GUI_FRAMEBUFFER = new VRTextureTarget("GUI", GuiHandler.GUI_WIDTH, GuiHandler.GUI_HEIGHT, true,
                 -1, true, dataholder.vrSettings.guiMipmaps, false);
@@ -781,7 +793,6 @@ public abstract class VRRenderer {
 
             try {
                 minecraft.mainRenderTarget = this.framebufferVrRender;
-                VRShaders.setupBlitAspect();
                 RenderHelper.checkGLError("init blit aspect shader");
                 VRShaders.setupDepthMask();
                 RenderHelper.checkGLError("init depth shader");

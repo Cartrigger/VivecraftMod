@@ -44,7 +44,7 @@ public class VRTextureTarget extends RenderTarget {
         super(false);
         this.name = name;
         RenderSystem.assertOnRenderThreadOrInit();
-        this.resize(width, height);
+        this.resize(width, height, Minecraft.ON_OSX);
 
         // free the old one when setting a new one
         if (this.colorTextureId != -1) {
