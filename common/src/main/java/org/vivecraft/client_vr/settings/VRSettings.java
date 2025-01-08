@@ -188,7 +188,7 @@ public class VRSettings {
     public int version = UNKNOWN_VERSION;
 
     @SettingField(VrOptions.VR_PLUGIN)
-    public VRProvider stereoProviderPluginID = VRProvider.OPENVR;
+    public VRProvider stereoProviderPluginID = VRProvider.OPENXR;
     public boolean storeDebugAim = false;
     @SettingField
     public int smoothRunTickCount = 20;
