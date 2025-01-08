@@ -68,7 +68,7 @@ import org.vivecraft.client_vr.gameplay.trackers.TelescopeTracker;
 import org.vivecraft.client_vr.menuworlds.MenuWorldDownloader;
 import org.vivecraft.client_vr.menuworlds.MenuWorldExporter;
 import org.vivecraft.client_vr.provider.MCVR;
-import org.vivecraft.client_vr.provider.openvr_lwjgl.VRInputAction;
+import org.vivecraft.client_vr.provider.control.VRInputAction;
 import org.vivecraft.client_vr.render.MirrorNotification;
 import org.vivecraft.client_vr.render.RenderConfigException;
 import org.vivecraft.client_vr.render.VRFirstPersonArmSwing;
@@ -314,7 +314,7 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
             try {
                 Profiler.get().push("setupRenderConfiguration");
                 RenderHelper.checkGLError("pre render setup");
-                ClientDataHolderVR.getInstance().vrRenderer.setupRenderConfiguration();
+                ClientDataHolderVR.getInstance().vrRenderer.setupRenderConfiguration(true);
                 RenderHelper.checkGLError("post render setup");
             } catch (Exception e) {
                 // something went wrong, disable VR
@@ -349,17 +349,6 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
             return false;
         } else {
             return renderLevel;
-        }
-    }
-
-    @Inject(method = "runTick", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;unbindWrite()V"))
-    private void vivecraft$blitMirror(CallbackInfo ci) {
-        if (VRState.VR_RUNNING) {
-            Profiler.get().popPush("vrMirror");
-            RenderPassManager.setMirrorRenderPass();
-            this.mainRenderTarget.bindWrite(true);
-            ShaderHelper.drawMirror();
-            RenderHelper.checkGLError("post-mirror");
         }
     }
 
