@@ -28,10 +28,12 @@ import org.vivecraft.client_vr.settings.VRSettings;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
 
+import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_SRGB;
 import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
@@ -73,6 +75,7 @@ public class MCOpenXR extends MCVR {
         super(mc, dh, VivecraftVRMod.INSTANCE);
         OME = this;
         this.hapticScheduler = new OpenXRHapticSchedular();
+        GL11.glDisable(GL_FRAMEBUFFER_SRGB);
     }
 
     @Override
@@ -111,6 +114,8 @@ public class MCOpenXR extends MCVR {
             error = XR10.xrDestroyInstance(this.instance);
             logError(error, "xrDestroyInstance", "");
         }
+
+        GL11.glEnable(GL_FRAMEBUFFER_SRGB);
         this.eventDataBuffer.close();
     }
 
@@ -598,7 +603,7 @@ public class MCOpenXR extends MCVR {
             // get needed extensions
             String graphicsExtension = this.device.getGraphicsExtension();
             boolean missingGraphics = true;
-            PointerBuffer extensions = stack.callocPointer(3);
+            PointerBuffer extensions = stack.callocPointer(4);
             while (properties.hasRemaining()) {
                 XrExtensionProperties prop = properties.get();
                 String extensionName = prop.extensionNameString();
@@ -617,6 +622,9 @@ public class MCOpenXR extends MCVR {
                 {
                     extensions.put(memAddress(stackUTF8(
                         HTCViveCosmosControllerInteraction.XR_HTC_VIVE_COSMOS_CONTROLLER_INTERACTION_EXTENSION_NAME)));
+                }
+                if (extensionName.equals(FBDisplayRefreshRate.XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME)) {
+                    extensions.put(memAddress(stackUTF8(FBDisplayRefreshRate.XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME)));
                 }
             }
 
@@ -841,6 +849,19 @@ public class MCOpenXR extends MCVR {
         }
     }
 
+    private void initDisplayRefreshRate() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer refreshRateCount = stack.callocInt(1);
+            FBDisplayRefreshRate.xrEnumerateDisplayRefreshRatesFB(session, refreshRateCount, null);
+
+            FloatBuffer refreshRateBuffer = stack.callocFloat(refreshRateCount.get(0));
+            FBDisplayRefreshRate.xrEnumerateDisplayRefreshRatesFB(session, refreshRateCount, refreshRateBuffer);
+
+            refreshRateBuffer.rewind();
+            FBDisplayRefreshRate.xrRequestDisplayRefreshRateFB(session, refreshRateBuffer.get(refreshRateCount.get(0) -1));
+        }
+    }
+
     /**
      * Creates an array of XrStructs with their types pre set to @param type
      */
@@ -864,6 +885,7 @@ public class MCOpenXR extends MCVR {
         this.loadDefaultBindings();
         //this.installApplicationManifest(false);
         this.inputInitialized = true;
+        initDisplayRefreshRate();
     }
 
     @Override
