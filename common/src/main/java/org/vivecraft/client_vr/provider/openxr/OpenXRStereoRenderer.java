@@ -4,13 +4,13 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.util.Tuple;
 import org.joml.Matrix4f;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.opengl.GL31;
 import org.lwjgl.openxr.*;
 import org.lwjgl.system.MemoryStack;
 import org.vivecraft.client_vr.VRTextureTarget;
 import org.vivecraft.client_vr.provider.VRRenderer;
 import org.vivecraft.client_vr.render.RenderConfigException;
 import org.vivecraft.client_vr.render.helpers.RenderHelper;
+import org.vivecraft.common.utils.MathUtils;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
@@ -22,6 +22,7 @@ public class OpenXRStereoRenderer extends VRRenderer {
     private VRTextureTarget[] rightFramebuffers;
     private boolean render;
     private XrCompositionLayerProjectionView.Buffer projectionLayerViews;
+    private boolean recalculateProjectionMatrix = true;
 
 
     public OpenXRStereoRenderer(MCOpenXR vr) {
@@ -91,7 +92,7 @@ public class OpenXRStereoRenderer extends VRRenderer {
 
             // Render view to the appropriate part of the swapchain image.
             for (int viewIndex = 0; viewIndex < 2; viewIndex++) {
-                var subImage = this.projectionLayerViews.get(viewIndex)
+                XrSwapchainSubImage subImage = this.projectionLayerViews.get(viewIndex)
                     .type(XR10.XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW)
                     .pose(this.openxr.viewBuffer.get(viewIndex).pose())
                     .fov(this.openxr.viewBuffer.get(viewIndex).fov())
@@ -101,6 +102,7 @@ public class OpenXRStereoRenderer extends VRRenderer {
                 subImage.imageRect().extent().set(this.openxr.width, this.openxr.height);
                 subImage.imageArrayIndex(viewIndex);
             }
+            this.recalculateProjectionMatrix = true;
         }
     }
 
@@ -108,8 +110,12 @@ public class OpenXRStereoRenderer extends VRRenderer {
      * no caching for openxr
      */
     @Override
-    public Matrix4f getCachedProjectionMatrix(int eyeType, float nearClip, float farClip) {
-        this.eyeProj[eyeType] = this.getProjectionMatrix(eyeType, nearClip, farClip);
+    public com.mojang.math.Matrix4f getCachedProjectionMatrix(int eyeType, float nearClip, float farClip) {
+        if (this.recalculateProjectionMatrix) {
+            this.eyeProj[0] = MathUtils.toMcMat4(this.getProjectionMatrix(0, nearClip, farClip));
+            this.eyeProj[1] = MathUtils.toMcMat4(this.getProjectionMatrix(1, nearClip, farClip));
+            this.recalculateProjectionMatrix = false;
+        }
         return this.eyeProj[eyeType];
     }
 
