@@ -188,7 +188,7 @@ public class VRSettings {
     public int version = UNKNOWN_VERSION;
 
     @SettingField(VrOptions.VR_PLUGIN)
-    public VRProvider stereoProviderPluginID = VRProvider.OPENXR;
+    public VRProvider stereoProviderPluginID = VRProvider.OPENVR;
     public boolean storeDebugAim = false;
     @SettingField
     public int smoothRunTickCount = 20;
@@ -552,7 +552,7 @@ public class VRSettings {
     @SettingField(VrOptions.CHAT_MESSAGE_STENCIL)
     public boolean showChatMessageStencil = true;
     @SettingField(value = VrOptions.VR_ENABLED, config = "vrEnabled")
-    public boolean vrEnabled = true;
+    public boolean vrEnabled = false;
     @SettingField(VrOptions.VR_CLOSE_WITH_RUNTIME)
     public boolean closeWithRuntime = true;
     @SettingField(VrOptions.VR_REMEMBER_ENABLED)
