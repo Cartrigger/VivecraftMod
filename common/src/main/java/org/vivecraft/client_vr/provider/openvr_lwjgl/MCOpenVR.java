@@ -102,7 +102,6 @@ public class MCOpenVR extends MCVR {
     // holds the handle to the devices other than the headset
     private final long[] deviceHandle = new long[MCVR.TRACKABLE_DEVICE_COUNT];
 
-    private boolean inputInitialized;
     private final InputOriginInfo originInfo;
     private final InputPoseActionData poseData;
     private final InputDigitalActionData digital;
@@ -421,15 +420,21 @@ public class MCOpenVR extends MCVR {
     }
 
     @Override
+    public void handleEvents() {
+        mc.getProfiler().push("pollEvents");
+        this.pollVREvents();
+        this.mc.getProfiler().popPush("processEvents");
+        this.processVREvents();
+        mc.getProfiler().pop();
+    }
+
+    @Override
     public void poll(long frameIndex) {
         if (!this.initialized) return;
 
         this.paused = VRSystem_ShouldApplicationPause();
-        this.mc.getProfiler().push("pollEvents");
-        this.pollVREvents();
-        this.mc.getProfiler().popPush("processEvents");
-        this.processVREvents();
-        this.mc.getProfiler().popPush("updatePose/Vsync");
+
+        mc.getProfiler().push("updatePose/Vsync");
         this.updatePose();
 
         if (!this.dh.vrSettings.seated) {

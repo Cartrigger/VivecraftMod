@@ -108,6 +108,7 @@ public class OpenXRStereoRenderer extends VRRenderer {
 
     /**
      * no caching for openxr
+     * the projection matrix may change every frame, so recalculate it once per frame for up to date info
      */
     @Override
     public com.mojang.math.Matrix4f getCachedProjectionMatrix(int eyeType, float nearClip, float farClip) {
