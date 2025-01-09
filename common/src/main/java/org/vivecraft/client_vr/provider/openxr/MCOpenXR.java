@@ -16,6 +16,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client_vr.ClientDataHolderVR;
+import org.vivecraft.client_vr.VRState;
 import org.vivecraft.client_vr.gameplay.screenhandlers.KeyboardHandler;
 import org.vivecraft.client_vr.gameplay.screenhandlers.RadialHandler;
 import org.vivecraft.client_vr.provider.ControllerType;
@@ -74,7 +75,7 @@ public class MCOpenXR extends MCVR {
     public MCOpenXR(Minecraft mc, ClientDataHolderVR dh) {
         super(mc, dh, VivecraftVRMod.INSTANCE);
         OME = this;
-        this.hapticScheduler = new OpenXRHapticSchedular();
+        this.hapticScheduler = new OpenXRHapticScheduler();
         GL11.glDisable(GL_FRAMEBUFFER_SRGB);
     }
 
@@ -120,15 +121,15 @@ public class MCOpenXR extends MCVR {
     }
 
     @Override
-    protected ControllerType findActiveBindingControllerType(KeyMapping binding) {
+    protected ControllerType findActiveBindingControllerType(KeyMapping keyMapping) {
         if (!this.inputInitialized) {
             return null;
         } else {
-            long path = this.getInputAction(binding).getLastOrigin();
+            long path = this.getInputAction(keyMapping).getLastOrigin();
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 IntBuffer buf = stack.callocInt(1);
                 int error = XR10.xrPathToString(this.instance, path, buf, null);
-                logError(error, "xrPathToString", "get string length for", binding.getName());
+                logError(error, "xrPathToString", "get string length for", keyMapping.getName());
 
                 int size = buf.get();
                 if (size <= 0) {
@@ -138,7 +139,7 @@ public class MCOpenXR extends MCVR {
                 buf = stack.callocInt(size);
                 ByteBuffer byteBuffer = stack.calloc(size);
                 error = XR10.xrPathToString(this.instance, path, buf, byteBuffer);
-                logError(error, "xrPathToString", "get string for", binding.getName());
+                logError(error, "xrPathToString", "get string for", keyMapping.getName());
                 byte[] bytes = new byte[byteBuffer.remaining()];
                 byteBuffer.get(bytes);
                 String name = new String(bytes);
@@ -151,14 +152,19 @@ public class MCOpenXR extends MCVR {
     }
 
     @Override
-    public void poll(long var1) {
+    public void handleEvents() {
+        mc.getProfiler().push("events");
+        this.pollVREvents();
+        mc.getProfiler().pop();
+    }
+
+    @Override
+    public void poll(long frameIndex) {
         if (this.initialized) {
-            this.mc.getProfiler().push("events");
-            this.pollVREvents();
 
             if (!this.dh.vrSettings.seated) {
-                this.mc.getProfiler().popPush("controllers");
-                this.mc.getProfiler().push("gui");
+                mc.getProfiler().push("controllers");
+                mc.getProfiler().push("gui");
 
                 if (this.mc.screen == null && this.dh.vrSettings.vrTouchHotbar) {
 
@@ -381,7 +387,7 @@ public class MCOpenXR extends MCVR {
             int error = XR10.xrGetActionStateFloat(this.session, info, state);
             logError(error, "xrGetActionStateFloat", action.name);
 
-            action.analogData[i].deltaX = action.analogData[i].x - state.currentState();
+            action.analogData[i].deltaX = state.currentState() - action.analogData[i].x;
             action.analogData[i].x = state.currentState();
             action.analogData[i].activeOrigin = getOrigins(action).get(0);
             action.analogData[i].isActive = state.isActive();
@@ -404,8 +410,8 @@ public class MCOpenXR extends MCVR {
             int error = XR10.xrGetActionStateVector2f(this.session, info, state);
             logError(error, "xrGetActionStateVector2f", action.name);
 
-            action.analogData[i].deltaX = action.analogData[i].x - state.currentState().x();
-            action.analogData[i].deltaY = action.analogData[i].y - state.currentState().y();
+            action.analogData[i].deltaX = state.currentState().x() - action.analogData[i].x;
+            action.analogData[i].deltaY = state.currentState().y() - action.analogData[i].y;
             action.analogData[i].x = state.currentState().x();
             action.analogData[i].y = state.currentState().y();
             action.analogData[i].activeOrigin = getOrigins(action).get(0);
@@ -519,6 +525,16 @@ public class MCOpenXR extends MCVR {
                 this.isActive = false;
                 int error = XR10.xrEndSession(this.session);
                 logError(error, "xrEndSession", "XR_SESSION_STATE_STOPPING");
+
+                if (ClientDataHolderVR.getInstance().vrSettings.closeWithRuntime) {
+                    VRSettings.LOGGER.info("Vivecraft: OpenXR stopped, closing the game with it");
+                    this.mc.stop();
+                } else {
+                    VRSettings.LOGGER.info("Vivecraft: OpenXR stopped, disabling VR");
+                    VRState.VR_ENABLED = !VRState.VR_ENABLED;
+                    ClientDataHolderVR.getInstance().vrSettings.vrEnabled = VRState.VR_ENABLED;
+                    ClientDataHolderVR.getInstance().vrSettings.saveOptions();
+                }
             }
             case XR10.XR_SESSION_STATE_VISIBLE, XR10.XR_SESSION_STATE_FOCUSED: {
                 this.isActive = true;
@@ -562,7 +578,7 @@ public class MCOpenXR extends MCVR {
                 this.initializeOpenXRSwapChain();
                 this.initInputAndApplication();
             } catch (Exception e) {
-                e.printStackTrace();
+                VRSettings.LOGGER.error("Vivecraft: OpenXR init failed", e);
                 this.initSuccess = false;
                 this.initStatus = e.getLocalizedMessage();
                 return false;
@@ -570,7 +586,7 @@ public class MCOpenXR extends MCVR {
 
             // TODO Seated when no controllers
 
-            System.out.println("OpenXR initialized & VR connected.");
+            VRSettings.LOGGER.info("Vivecraft: OpenXR initialized & VR connected.");
             this.deviceVelocity = new Vector3f[64];
 
             for (int i = 0; i < this.poseMatrices.length; ++i) {
@@ -725,7 +741,7 @@ public class MCOpenXR extends MCVR {
             this.session = new XrSession(sessionPtr.get(0), this.instance);
 
             while (!this.isActive) {
-                System.out.println("waiting");
+                VRSettings.LOGGER.info("Vivecraft: waiting for OpenXR session to start");
                 pollVREvents();
             }
         }
@@ -863,7 +879,7 @@ public class MCOpenXR extends MCVR {
     }
 
     /**
-     * Creates an array of XrStructs with their types pre set to @param type
+     * Creates an array of XrStructs with their types preset to {@code type}
      */
     static ByteBuffer bufferStack(int capacity, int sizeof, int type) {
         ByteBuffer b = stackCalloc(capacity * sizeof);
@@ -889,7 +905,7 @@ public class MCOpenXR extends MCVR {
     }
 
     @Override
-    public Matrix4f getControllerComponentTransform(int var1, String var2) {
+    public Matrix4f getControllerComponentTransform(int controllerIndex, String componentName) {
         return new Matrix4f();
     }
 
@@ -899,16 +915,16 @@ public class MCOpenXR extends MCVR {
     }
 
     @Override
-    public List<Long> getOrigins(VRInputAction var1) {
+    public List<Long> getOrigins(VRInputAction action) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             XrBoundSourcesForActionEnumerateInfo info = XrBoundSourcesForActionEnumerateInfo.calloc(stack);
             info.type(XR10.XR_TYPE_BOUND_SOURCES_FOR_ACTION_ENUMERATE_INFO);
             info.next(NULL);
-            info.action(
-                new XrAction(var1.handle, new XrActionSet(this.actionSetHandles.get(var1.actionSet), this.instance)));
+            info.action(new XrAction(action.handle,
+                new XrActionSet(this.actionSetHandles.get(action.actionSet), this.instance)));
             IntBuffer buf = stack.callocInt(1);
             int error = XR10.xrEnumerateBoundSourcesForAction(this.session, info, buf, null);
-            logError(error, "xrEnumerateBoundSourcesForAction", var1.name);
+            logError(error, "xrEnumerateBoundSourcesForAction", action.name);
 
             int size = buf.get();
             if (size <= 0) {
@@ -918,7 +934,7 @@ public class MCOpenXR extends MCVR {
             buf = stack.callocInt(size);
             LongBuffer longbuf = stack.callocLong(size);
             error = XR10.xrEnumerateBoundSourcesForAction(this.session, info, buf, longbuf);
-            logError(error, "xrEnumerateBoundSourcesForAction", var1.name);
+            logError(error, "xrEnumerateBoundSourcesForAction", action.name);
             long[] array;
             if (longbuf.hasArray()) { //TODO really?
                 array = longbuf.array();
@@ -935,12 +951,12 @@ public class MCOpenXR extends MCVR {
     }
 
     @Override
-    public String getOriginName(long l) {
+    public String getOriginName(long origin) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             XrInputSourceLocalizedNameGetInfo info = XrInputSourceLocalizedNameGetInfo.calloc(stack);
             info.type(XR10.XR_TYPE_INPUT_SOURCE_LOCALIZED_NAME_GET_INFO);
             info.next(0);
-            info.sourcePath(l);
+            info.sourcePath(origin);
             info.whichComponents(XR10.XR_INPUT_SOURCE_LOCALIZED_NAME_COMPONENT_BIT);
 
             IntBuffer buf = stack.callocInt(1);
@@ -967,13 +983,12 @@ public class MCOpenXR extends MCVR {
 
     @Override
     public boolean isActive() {
-        this.pollVREvents();
         return this.isActive;
     }
 
     @Override
-    public ControllerType getOriginControllerType(long i) {
-        if (i == this.aim[RIGHT_CONTROLLER]) {
+    public ControllerType getOriginControllerType(long inputValueHandle) {
+        if (inputValueHandle == this.aim[RIGHT_CONTROLLER]) {
             return ControllerType.RIGHT;
         }
         return ControllerType.LEFT;
