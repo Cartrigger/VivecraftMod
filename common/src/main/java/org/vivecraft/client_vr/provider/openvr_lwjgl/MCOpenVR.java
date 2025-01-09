@@ -433,7 +433,7 @@ public class MCOpenVR extends MCVR {
 
         this.paused = VRSystem_ShouldApplicationPause();
 
-        Profiler.get().push("updatePose/Vsync");
+        mc.getProfiler().push("updatePose/Vsync");
         this.updatePose();
 
         if (!this.dh.vrSettings.seated) {
