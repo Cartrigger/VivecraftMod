@@ -1033,10 +1033,7 @@ public abstract class MCVR {
 
         // radial menu
         if (MOD.keyRadialMenu.consumeClick() && !gui) {
-            ControllerType controller = this.findActiveBindingControllerType(MOD.keyRadialMenu);
-            if (controller != null) {
-                RadialHandler.setOverlayShowing(!RadialHandler.isShowing(), controller);
-            }
+            RadialHandler.setOverlayShowing(!RadialHandler.isShowing(), ControllerType.RIGHT);
         }
 
         // close radial with ESC when not hold mode
