@@ -9,7 +9,11 @@ public class XRBindings {
 
     public static HashSet<String> supportedHeadsets() {
         HashSet<String> set = new HashSet<>();
-        if (MCOpenXR.get().systemName.toLowerCase().contains("oculus") || MCOpenXR.get().systemName.toLowerCase().contains("meta")) {
+        if (MCOpenXR.get().systemName.toLowerCase().contains("oculus")
+            || MCOpenXR.get().systemName.toLowerCase().contains("meta")
+            || MCOpenXR.get().systemName.toLowerCase().contains("pico")
+            || MCOpenXR.get().systemName.toLowerCase().contains("bytedance")) {
+
             set.add("/interaction_profiles/oculus/touch_controller");
             return set;
         }
@@ -150,9 +154,6 @@ public class XRBindings {
         switch (Headset) {
             case "/interaction_profiles/htc/vive_cosmos_controller" -> {
                 return cosmosBindings();
-            }
-            case "/interaction_profiles/htc/vive_controller" -> {
-                return viveBindings();
             }
             case "/interaction_profiles/oculus/touch_controller" -> {
                 return quest2Bindings();
