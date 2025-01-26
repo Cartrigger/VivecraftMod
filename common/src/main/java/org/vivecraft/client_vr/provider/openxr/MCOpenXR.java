@@ -525,7 +525,13 @@ public class MCOpenXR extends MCVR {
                 this.isActive = false;
                 int error = XR10.xrEndSession(this.session);
                 logError(error, "xrEndSession", "XR_SESSION_STATE_STOPPING");
-
+                break;
+            }
+            case XR10.XR_SESSION_STATE_VISIBLE, XR10.XR_SESSION_STATE_FOCUSED: {
+                this.isActive = true;
+                break;
+            }
+            case XR10.XR_SESSION_STATE_EXITING: {
                 if (ClientDataHolderVR.getInstance().vrSettings.closeWithRuntime) {
                     VRSettings.LOGGER.info("Vivecraft: OpenXR stopped, closing the game with it");
                     this.mc.stop();
@@ -535,12 +541,9 @@ public class MCOpenXR extends MCVR {
                     ClientDataHolderVR.getInstance().vrSettings.vrEnabled = VRState.VR_ENABLED;
                     ClientDataHolderVR.getInstance().vrSettings.saveOptions();
                 }
-            }
-            case XR10.XR_SESSION_STATE_VISIBLE, XR10.XR_SESSION_STATE_FOCUSED: {
-                this.isActive = true;
                 break;
             }
-            case XR10.XR_SESSION_STATE_EXITING, XR10.XR_SESSION_STATE_IDLE, XR10.XR_SESSION_STATE_SYNCHRONIZED: {
+            case XR10.XR_SESSION_STATE_IDLE, XR10.XR_SESSION_STATE_SYNCHRONIZED: {
                 this.isActive = false;
                 break;
             }
