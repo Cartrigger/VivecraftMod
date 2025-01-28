@@ -615,7 +615,7 @@ public class MCOpenXR extends MCVR {
             // get needed extensions
             String graphicsExtension = this.device.getGraphicsExtension();
             boolean missingGraphics = true;
-            PointerBuffer extensions = stack.callocPointer(3);
+            PointerBuffer extensions = stack.callocPointer(4);
             while (properties.hasRemaining()) {
                 XrExtensionProperties prop = properties.get();
                 String extensionName = prop.extensionNameString();
@@ -634,6 +634,12 @@ public class MCOpenXR extends MCVR {
                 {
                     extensions.put(memAddress(stackUTF8(
                         HTCViveCosmosControllerInteraction.XR_HTC_VIVE_COSMOS_CONTROLLER_INTERACTION_EXTENSION_NAME)));
+                }
+                if (extensionName.equals(
+                    BDControllerInteraction.XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME))
+                {
+                    extensions.put(memAddress(stackUTF8(
+                        BDControllerInteraction.XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME)));
                 }
             }
 
