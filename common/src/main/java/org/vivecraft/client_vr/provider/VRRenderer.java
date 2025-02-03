@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class VRRenderer {
-
     // projection matrices
     public Matrix4f[] eyeProj = new Matrix4f[2];
     private float lastFarClip = 0F;
